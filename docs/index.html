@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+
+<html lang="zh_cn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Lupro’s documentation! &#8212; Lupro 1.0.3 文档</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/translations.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-lupro-s-documentation">
+<h1>Welcome to Lupro’s documentation!<a class="headerlink" href="#welcome-to-lupro-s-documentation" title="永久链接至标题">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="module-lupro">
+<span id="api"></span><h1>API<a class="headerlink" href="#module-lupro" title="永久链接至标题">¶</a></h1>
+<div class="section" id="lupro-library">
+<h2>Lupro Library<a class="headerlink" href="#lupro-library" title="永久链接至标题">¶</a></h2>
+<p>Lupro is an Asynchronous HTTP library, written in Python, It is fully compatible with <cite>requests</cite>.
+usage:</p>
+<ul>
+<li><p><cite>兼容requests</cite></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">lupro</span> <span class="kn">import</span> <span class="n">lupro</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">lupro</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://www.python.org&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
+<span class="go">200</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>其它 <cite>lupro.api</cite> 请参考 &lt;<a class="reference external" href="https://github.com/luxuncang/lupro">https://github.com/luxuncang/lupro</a>&gt;.</p>
+<dl class="field-list simple">
+<dt class="field-odd">copyright</dt>
+<dd class="field-odd"><ol class="loweralpha simple" start="3">
+<li><p>2021 by ShengXin Lu.</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="py function">
+<dt id="lupro.Batchanalysis">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">Batchanalysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">mold:</span> <span class="pre">str</span></em>, <em class="sig-param"><span class="pre">generator:</span> <span class="pre">list</span></em>, <em class="sig-param"><span class="pre">analytic:</span> <span class="pre">dict</span></em>, <em class="sig-param"><span class="pre">auxiliary=&lt;function</span> <span class="pre">original&gt;</span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">list</span><a class="headerlink" href="#lupro.Batchanalysis" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>mold</cite> : <cite>str</cite> 解析方法
+<cite>generator</cite> : <cite>list[lupro]</cite> lupro实例列表
+<cite>analytic</cite> : <cite>dict</cite> 解析字典
+<cite>auxiliary</cite> : <cite>function</cite> 自定义解析处理
+<cite>Batchanalysis</cite> 为解析链</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.Batchsubmission">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">Batchsubmission</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generator</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">list</span><a class="headerlink" href="#lupro.Batchsubmission" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>generator</cite> : <cite>list[lupro]</cite> lupro实例列表
+<cite>Batchsubmission</cite> 为通过实例列表的批量请求</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.BulkDownload">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">BulkDownload</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">generator</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">list</span><a class="headerlink" href="#lupro.BulkDownload" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>generator</cite> : <cite>list[lupro]</cite> lupro实例列表
+<cite>BulkDownload</cite> 为通过实例列表的批量下载</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.generator">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">generator</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instantiation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filenameNo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">list</span><a class="headerlink" href="#lupro.generator" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>instantiation</cite> : <cite>lupro</cite> lupro模板实例
+<cite>url</cite> : <cite>list</cite> 链接表
+<cite>filenameNo</cite> : <cite>list</cite> filename 序列</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.get_header">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">get_header</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">str</span><a class="headerlink" href="#lupro.get_header" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>get_header</cite> 可以重写，返回一个UA头字符串即可</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.get_proxies">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">get_proxies</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lupro.get_proxies" title="永久链接至目标">¶</a></dt>
+<dd><ul class="simple">
+<li><p>将代理赋值到 <cite>lupro.Proxies</cite></p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.json_Batchanalysis">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">json_Batchanalysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">generator</span></em>, <em class="sig-param"><span class="pre">analytic</span></em>, <em class="sig-param"><span class="pre">auxiliary=&lt;function</span> <span class="pre">original&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.json_Batchanalysis" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>generator</cite> : <cite>list[lupro]</cite> lupro实例列表
+<cite>analytic</cite> : <cite>dict</cite> 解析字典
+<cite>auxiliary</cite> : <cite>function</cite> 自定义解析处理
+<cite>json_Batchanalysis</cite> 为json解析器 &lt;json解析器为 <cite>dtanys</cite>&gt;</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.logging">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">logging</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.logging" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>text</cite> : str 日志
+<cite>logging</cite> 可以重写,返回带 <cite>text</cite> 的字符串即可</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="lupro.lupro">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">lupro</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lupros</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#lupro.lupros" title="lupro.lupros"><span class="pre">lupro.lupros</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxie</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'html'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faultolt</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.lupro" title="永久链接至目标">¶</a></dt>
+<dd><ul class="simple">
+<li><p>完全兼容 <cite>requests</cite></p></li>
+</ul>
+<dl class="py method">
+<dt id="lupro.lupro.authentication">
+<code class="sig-name descname"><span class="pre">authentication</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="headerlink" href="#lupro.lupro.authentication" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>authentication</cite> 为快速代理验证</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="lupro.lupro.json_analysis">
+<code class="sig-name descname"><span class="pre">json_analysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">analytic:</span> <span class="pre">dict</span></em>, <em class="sig-param"><span class="pre">auxiliary=&lt;function</span> <span class="pre">original&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.lupro.json_analysis" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>analytic</cite> : <cite>dict</cite> json解析字典
+<cite>auxiliary</cite> : <cite>function</cite> 自定义解析处理
+<cite>json_analysis</cite> 为实例json解析方法</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="lupro.lupro.re_analysis">
+<code class="sig-name descname"><span class="pre">re_analysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">analytic</span></em>, <em class="sig-param"><span class="pre">auxiliary=&lt;function</span> <span class="pre">original&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.lupro.re_analysis" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>analytic</cite> : <cite>dict`{`str</cite>:<cite>function</cite>} 正则解析字典 
+<cite>auxiliary</cite> : <cite>function</cite> 自定义解析处理
+<cite>re_analysis</cite> 为实例json解析方法</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="lupro.lupro.save_file">
+<code class="sig-name descname"><span class="pre">save_file</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">str</span><a class="headerlink" href="#lupro.lupro.save_file" title="永久链接至目标">¶</a></dt>
+<dd><ul class="simple">
+<li><p>如果 <cite>filename</cite> 不为绝对路径,则保存文件的路径为当前目录</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt id="lupro.lupro.task">
+<code class="sig-name descname"><span class="pre">task</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">&lt;module</span> <span class="pre">‘requests’</span> <span class="pre">from</span> <span class="pre">‘D:\anaconda3\lib\site-packages\requests\__init__.py’&gt;</span><a class="headerlink" href="#lupro.lupro.task" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>task</cite> 为 <cite>lupro</cite> 实例所有请求接口</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="lupro.lupro.xpath_analysis">
+<code class="sig-name descname"><span class="pre">xpath_analysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">analytic:</span> <span class="pre">dict</span></em>, <em class="sig-param"><span class="pre">auxiliary=&lt;function</span> <span class="pre">original&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.lupro.xpath_analysis" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>analytic</cite> : <cite>dict</cite> xpath解析字典
+<cite>auxiliary</cite> : <cite>function</cite> 自定义解析处理
+<cite>xpath_analysis</cite> 为实例xpath解析方法</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="lupro.lupros">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">lupros</span></code><a class="headerlink" href="#lupro.lupros" title="永久链接至目标">¶</a></dt>
+<dd><p>#### requests 辅助字典生成器</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.original">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">original</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.original" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>original</cite> 为默认解析处理函数</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.re_Batchanalysis">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">re_Batchanalysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">generator</span></em>, <em class="sig-param"><span class="pre">analytic</span></em>, <em class="sig-param"><span class="pre">auxiliary=&lt;function</span> <span class="pre">original&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.re_Batchanalysis" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>generator</cite> : <cite>list[lupro]</cite> lupro实例列表
+<cite>analytic</cite> : <cite>dict`{`str</cite>:<cite>function</cite>} 正则解析字典 
+<cite>auxiliary</cite> : <cite>function</cite> 自定义解析处理
+<cite>re_Batchanalysis</cite> 为正则解析器</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.requests_dict">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">requests_dict</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">luprodir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">dict</span><a class="headerlink" href="#lupro.requests_dict" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>luprodir</cite> : <cite>dict</cite> lupro构造参数
+<cite>url</cite> : <cite>str</cite> 链接
+<cite>no</cite> : <cite>str</cite> filename 序列</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.verify_proxies">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">verify_proxies</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proxies</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lupro.verify_proxies" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>proxies</cite> : str 代理
+<cite>verify_proxies</cite> 可以重写,如果可用返回 <cite>proxies</cite> 否则返回 <cite>False</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lupro.xpath_Batchanalysis">
+<code class="sig-prename descclassname"><span class="pre">lupro.</span></code><code class="sig-name descname"><span class="pre">xpath_Batchanalysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">generator</span></em>, <em class="sig-param"><span class="pre">analytic</span></em>, <em class="sig-param"><span class="pre">auxiliary=&lt;function</span> <span class="pre">original&gt;</span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">list</span><a class="headerlink" href="#lupro.xpath_Batchanalysis" title="永久链接至目标">¶</a></dt>
+<dd><p><cite>generator</cite> : <cite>list[lupro]</cite> lupro实例列表
+<cite>analytic</cite> : <cite>dict</cite> 解析字典
+<cite>auxiliary</cite> : <cite>function</cite> 自定义解析处理
+<cite>xpath_Batchanalysis</cite> 为xpath解析器</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="永久链接至标题">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">索引</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">模块索引</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">搜索页面</span></a></p></li>
+</ul>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Lupro</a></h1>
+
+
+
+
+
+
+
+
+<h3>导航</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="转向" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, ShengXin Lu.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

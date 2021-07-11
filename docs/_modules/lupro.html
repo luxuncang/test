@@ -1,0 +1,620 @@
+
+<!DOCTYPE html>
+
+<html lang="zh_cn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>lupro &#8212; Lupro 1.0.3 文档</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/translations.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>lupro 源代码</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Lupro Library</span>
+<span class="sd">~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">Lupro is an Asynchronous HTTP library, written in Python, It is fully compatible with `requests`.</span>
+<span class="sd">usage:</span>
+
+<span class="sd">* `兼容requests`</span>
+
+<span class="sd">   &gt;&gt;&gt; from lupro import lupro</span>
+<span class="sd">   &gt;&gt;&gt; r = lupro.get(&#39;https://www.python.org&#39;)</span>
+<span class="sd">   &gt;&gt;&gt; r.status_code</span>
+<span class="sd">   200</span>
+
+<span class="sd">其它 `lupro.api` 请参考 &lt;https://github.com/luxuncang/lupro&gt;.</span>
+
+<span class="sd">:copyright: (c) 2021 by ShengXin Lu.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">gevent</span> <span class="kn">import</span> <span class="n">monkey</span>
+<span class="n">monkey</span><span class="o">.</span><span class="n">patch_all</span><span class="p">()</span>  <span class="c1"># 先引用</span>
+<span class="kn">import</span> <span class="nn">gevent</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+<span class="kn">from</span> <span class="nn">dtanys</span> <span class="kn">import</span> <span class="n">XDict</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+
+<span class="c1"># UA池</span>
+<span class="n">ua_list</span> <span class="o">=</span> <span class="p">[</span> 
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Opera/8.0 (Windows NT 5.1; U; en)&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 5.1; U; en; rv:1.8.1) Gecko/20061208 Firefox/2.0.0 Opera 9.50&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; en) Opera 9.50&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; U; Linux x86_64; zh-CN; rv:1.9.2.10) Gecko/20100922 Ubuntu/10.10 (maverick) Firefox/3.6.10&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2 &quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.11 TaoBrowser/2.0 Safari/536.11&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.71 Safari/537.1 LBBROWSER&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; LBBROWSER)&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; QQDownload 732; .NET4.0C; .NET4.0E; LBBROWSER)&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; QQBrowser/7.0.3698.400)&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; QQDownload 732; .NET4.0C; .NET4.0E)&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.84 Safari/535.11 SE 2.X MetaSr 1.0&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; SV1; QQDownload 732; .NET4.0C; .NET4.0E; SE 2.X MetaSr 1.0)&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 &quot;</span><span class="p">,</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; CrOS i686 2268.111.0) AppleWebKit/536.11 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.6 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/20.0.1092.0 Safari/536.6&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.6 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/20.0.1090.0 Safari/536.6&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.1 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.77.34.5 Safari/537.1&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1084.9 Safari/536.5&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.0) AppleWebKit/536.5 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1084.36 Safari/536.5&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_0) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1062.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1062.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.24 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1055.1 Safari/535.24&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/535.24 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1055.1 Safari/535.24&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; CrOS i686 2268.111.0) AppleWebKit/536.11 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.6 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/20.0.1092.0 Safari/536.6&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.6 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/20.0.1090.0 Safari/536.6&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.1 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.77.34.5 Safari/537.1&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1084.9 Safari/536.5&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.0) AppleWebKit/536.5 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1084.36 Safari/536.5&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_0) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1062.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1062.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1061.0 Safari/536.3&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.24 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1055.1 Safari/535.24&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/535.24 &quot;</span>
+     <span class="s2">&quot;(KHTML, like Gecko) Chrome/19.0.1055.1 Safari/535.24&quot;</span>
+<span class="p">]</span>
+
+<span class="c1"># 自定义请求头</span>
+<div class="viewcode-block" id="get_header"><a class="viewcode-back" href="../index.html#lupro.get_header">[文档]</a><span class="k">def</span> <span class="nf">get_header</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `get_header` 可以重写，返回一个UA头字符串即可</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">ua_list</span><span class="p">)</span></div>
+
+<span class="c1"># 自定义代理池</span>
+<div class="viewcode-block" id="get_proxies"><a class="viewcode-back" href="../index.html#lupro.get_proxies">[文档]</a><span class="k">def</span> <span class="nf">get_proxies</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    * 将代理赋值到 `lupro.Proxies` </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span><span class="s1">&#39;Please rewrite `get_proxies` function.&#39;</span></div>
+
+<span class="c1"># 自定义代理验证</span>
+<div class="viewcode-block" id="verify_proxies"><a class="viewcode-back" href="../index.html#lupro.verify_proxies">[文档]</a><span class="k">def</span> <span class="nf">verify_proxies</span><span class="p">(</span><span class="n">proxies</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `proxies` : str 代理</span>
+<span class="sd">    `verify_proxies` 可以重写,如果可用返回 `proxies` 否则返回 `False`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;http://www.baidu.com/&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;User-Agent&quot;</span><span class="p">:</span> <span class="n">get_header</span><span class="p">()},</span><span class="n">proxies</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;http&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;//</span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">},</span><span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">proxies</span></div>
+
+<span class="c1"># 自定义日志打印</span>
+<div class="viewcode-block" id="logging"><a class="viewcode-back" href="../index.html#lupro.logging">[文档]</a><span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `text` : str 日志</span>
+<span class="sd">    `logging` 可以重写,返回带 `text` 的字符串即可</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> INFO </span><span class="si">%s</span><span class="s2">&quot;</span>  <span class="o">%</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">text</span><span class="p">)</span></div>
+
+<span class="c1"># 辅助函数</span>
+<div class="viewcode-block" id="original"><a class="viewcode-back" href="../index.html#lupro.original">[文档]</a><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `original` 为默认解析处理函数</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">f</span></div>
+
+<div class="viewcode-block" id="lupros"><a class="viewcode-back" href="../index.html#lupro.lupros">[文档]</a><span class="k">class</span> <span class="nc">lupros</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    #### requests 辅助字典生成器</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;post&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;options&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kw</span> <span class="o">=</span> <span class="n">kw</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;head&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;put&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;patch&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;delete&#39;</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="lupro"><a class="viewcode-back" href="../index.html#lupro.lupro">[文档]</a><span class="k">class</span> <span class="nc">lupro</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    * 完全兼容 `requests`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># 当前文件夹</span>
+    <span class="n">onFile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># 代理池</span>
+    <span class="n">Proxies</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># 是否验证代理池</span>
+    <span class="n">VERIFY_PROXIES</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># 是否已验证代理</span>
+    <span class="n">IS_AGENT_VERIFIED</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span> <span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lupros</span> <span class="p">:</span> <span class="n">lupros</span><span class="p">,</span> <span class="n">proxie</span> <span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="nb">format</span> <span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="n">content</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span><span class="n">faultolt</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        `filename` : `str` 文件路径或请求名称 推荐使用路径命名</span>
+<span class="sd">        `lupros` : `lupros` requests参数字典</span>
+<span class="sd">        `proxie` : `bool` 是否使用代理</span>
+<span class="sd">        `format` : `str` 保存文件格式</span>
+<span class="sd">        `content` : `str` 回调最少字节</span>
+<span class="sd">        `faultolt` : `str` 可重试次数</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>    <span class="c1"># 文件路径或请求名称 推荐使用路径命名</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="nb">format</span>        <span class="c1"># 保存文件格式</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">faultolt</span> <span class="o">=</span> <span class="n">faultolt</span>    <span class="c1"># 可重试次数</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proxie</span> <span class="o">=</span> <span class="n">proxie</span>        <span class="c1"># 是否使用代理</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">content</span>      <span class="c1"># 回调最少字节</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lupros</span> <span class="o">=</span> <span class="n">lupros</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">lupros</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="o">*</span><span class="n">lupros</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kw</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">lupros</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="p">)</span> <span class="ow">and</span> <span class="n">proxie</span><span class="p">:</span>
+            <span class="n">get_proxies</span><span class="p">()</span>
+
+        <span class="k">assert</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxie</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proxie</span> <span class="ow">and</span> <span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="p">),</span><span class="s1">&#39;`Proxies` cannot be empty!&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;headers&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kw</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kw</span><span class="p">[</span><span class="s1">&#39;headers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;User-Agent&#39;</span> <span class="p">:</span> <span class="n">get_header</span><span class="p">()}</span>
+        
+        <span class="k">if</span> <span class="n">lupro</span><span class="o">.</span><span class="n">VERIFY_PROXIES</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxie</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">lupro</span><span class="o">.</span><span class="n">IS_AGENT_VERIFIED</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">logging</span><span class="p">(</span><span class="s1">&#39;开始验证代理！&#39;</span><span class="p">))</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authentication</span><span class="p">()</span>
+            <span class="n">lupro</span><span class="o">.</span><span class="n">IS_AGENT_VERIFIED</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">logging</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;用时</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">-</span><span class="n">t1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">logging</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;高质量代理：</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="p">)</span><span class="si">}</span><span class="s2">个！&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="s1">&#39;proxies&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kw</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxie</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proxie</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kw</span><span class="p">[</span><span class="s1">&#39;proxies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;http&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;//</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proxie</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+    
+    <span class="c1"># 验证代理</span>
+<div class="viewcode-block" id="lupro.authentication"><a class="viewcode-back" href="../index.html#lupro.lupro.authentication">[文档]</a>    <span class="k">def</span> <span class="nf">authentication</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        `authentication` 为快速代理验证</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">auth_proxies</span> <span class="o">=</span> <span class="p">[</span><span class="n">gevent</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">verify_proxies</span><span class="p">,</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="p">]</span>
+        <span class="n">gevent</span><span class="o">.</span><span class="n">joinall</span><span class="p">(</span><span class="n">auth_proxies</span><span class="p">)</span>
+        <span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">auth_proxies</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">value</span><span class="p">]</span></div>
+
+    <span class="c1"># 请求方法 lupro 所有请求</span>
+<div class="viewcode-block" id="lupro.task"><a class="viewcode-back" href="../index.html#lupro.lupro.task">[文档]</a>    <span class="k">def</span> <span class="nf">task</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        `task` 为 `lupro` 实例所有请求接口</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">faultolt</span><span class="o">&lt;=</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s1"> failed.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">logging</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proxie</span><span class="si">}</span><span class="s2"> -----&gt;开始请求！&quot;</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kw</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxie</span> <span class="ow">in</span> <span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="p">:</span>
+                <span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proxies</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">faultolt</span><span class="o">-=</span><span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proxies</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">lupro</span><span class="o">.</span><span class="n">Proxies</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kw</span><span class="p">[</span><span class="s1">&#39;proxies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;http&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;//</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proxies</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">logging</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">-----&gt;更新字典中！&quot;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="o">.</span><span class="n">status_code</span><span class="o">==</span><span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="p">)</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">logging</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="p">)</span><span class="si">}</span><span class="s2"> -----&gt;请求结束！&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+    
+    <span class="c1"># xpath 解析</span>
+<div class="viewcode-block" id="lupro.xpath_analysis"><a class="viewcode-back" href="../index.html#lupro.lupro.xpath_analysis">[文档]</a>    <span class="k">def</span> <span class="nf">xpath_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analytic</span> <span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">auxiliary</span> <span class="o">=</span> <span class="n">original</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        `analytic` : `dict` xpath解析字典</span>
+<span class="sd">        `auxiliary` : `function` 自定义解析处理</span>
+<span class="sd">        `xpath_analysis` 为实例xpath解析方法</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">apparent_encoding</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
+            <span class="n">html</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">HTML</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">apparent_encoding</span>
+            <span class="n">html</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">HTML</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">encoding</span><span class="p">,</span> <span class="s1">&#39;ignore&#39;</span><span class="p">))</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">analytic</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">auxiliary</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">html</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="c1"># json 解析</span>
+<div class="viewcode-block" id="lupro.json_analysis"><a class="viewcode-back" href="../index.html#lupro.lupro.json_analysis">[文档]</a>    <span class="k">def</span> <span class="nf">json_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analytic</span> <span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">auxiliary</span> <span class="o">=</span> <span class="n">original</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        `analytic` : `dict` json解析字典</span>
+<span class="sd">        `auxiliary` : `function` 自定义解析处理</span>
+<span class="sd">        `json_analysis` 为实例json解析方法</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">apparent_encoding</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">apparent_encoding</span>
+        <span class="n">reDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">analytic</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">reDict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">auxiliary</span><span class="p">(</span><span class="n">XDict</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">json</span><span class="p">(),</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">edict</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">reDict</span></div>
+
+    <span class="c1"># 正则 解析</span>
+<div class="viewcode-block" id="lupro.re_analysis"><a class="viewcode-back" href="../index.html#lupro.lupro.re_analysis">[文档]</a>    <span class="k">def</span> <span class="nf">re_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span> <span class="o">=</span> <span class="n">original</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        `analytic` : `dict`{`str`:`function`} 正则解析字典 </span>
+<span class="sd">        `auxiliary` : `function` 自定义解析处理</span>
+<span class="sd">        `re_analysis` 为实例json解析方法</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">apparent_encoding</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
+            <span class="n">html</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">HTML</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">apparent_encoding</span>
+            <span class="n">html</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">HTML</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">encoding</span><span class="p">,</span> <span class="s1">&#39;ignore&#39;</span><span class="p">))</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">analytic</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="p">[</span><span class="n">auxiliary</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">j</span><span class="p">(</span><span class="n">html</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="c1"># 保存文件路径</span>
+<div class="viewcode-block" id="lupro.save_file"><a class="viewcode-back" href="../index.html#lupro.lupro.save_file">[文档]</a>    <span class="k">def</span> <span class="nf">save_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        * 如果 `filename` 不为绝对路径,则保存文件的路径为当前目录</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onFile</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="sa">f</span><span class="s1">&#39;.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">path</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        `__repr__` 为 `lupro` 实例化参数</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;filename&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="p">,</span><span class="s1">&#39;format&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="p">,</span> <span class="s1">&#39;proxie&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">proxie</span><span class="p">,</span> <span class="s1">&#39;faultolt&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">faultolt</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="p">,</span><span class="s1">&#39;lupros&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">lupros</span><span class="p">}</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">requests</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s1">&#39;post&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s1">&#39;options&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s1">&#39;head&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s1">&#39;put&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s1">&#39;patch&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s1">&#39;delete&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span></div>
+
+
+<span class="c1"># 实例化参数字典</span>
+<div class="viewcode-block" id="requests_dict"><a class="viewcode-back" href="../index.html#lupro.requests_dict">[文档]</a><span class="k">def</span> <span class="nf">requests_dict</span><span class="p">(</span><span class="n">luprodir</span><span class="p">,</span><span class="n">url</span><span class="p">,</span><span class="n">no</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `luprodir` : `dict` lupro构造参数</span>
+<span class="sd">    `url` : `str` 链接</span>
+<span class="sd">    `no` : `str` filename 序列</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">luprodict</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">luprodir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">luprodict</span><span class="p">[</span><span class="s1">&#39;lupros&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">luprodict</span><span class="p">[</span><span class="s1">&#39;lupros&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">luprodict</span><span class="p">[</span><span class="s1">&#39;lupros&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span><span class="o">*</span><span class="n">luprodict</span><span class="p">[</span><span class="s1">&#39;lupros&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]),</span><span class="n">luprodict</span><span class="p">[</span><span class="s1">&#39;lupros&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">luprodict</span><span class="p">[</span><span class="s1">&#39;lupros&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">url</span>
+    <span class="n">luprodict</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">no</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">luprodict</span></div>
+
+<span class="c1"># 实例化生成器</span>
+<div class="viewcode-block" id="generator"><a class="viewcode-back" href="../index.html#lupro.generator">[文档]</a><span class="k">def</span> <span class="nf">generator</span><span class="p">(</span><span class="n">instantiation</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">filenameNo</span> <span class="o">=</span> <span class="p">[])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `instantiation` : `lupro` lupro模板实例</span>
+<span class="sd">    `url` : `list` 链接表</span>
+<span class="sd">    `filenameNo` : `list` filename 序列</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filenameNo</span><span class="p">:</span>
+        <span class="n">filenameNo</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+    <span class="nb">repr</span> <span class="o">=</span> <span class="n">instantiation</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lupro</span><span class="p">(</span><span class="o">**</span><span class="n">requests_dict</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">filenameNo</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+<span class="c1"># 批量请求</span>
+<div class="viewcode-block" id="Batchsubmission"><a class="viewcode-back" href="../index.html#lupro.Batchsubmission">[文档]</a><span class="k">def</span> <span class="nf">Batchsubmission</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `generator` : `list[lupro]` lupro实例列表</span>
+<span class="sd">    `Batchsubmission` 为通过实例列表的批量请求</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="n">gevent</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">task</span><span class="p">,)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">]</span>
+    <span class="n">gevent</span><span class="o">.</span><span class="n">joinall</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">])</span></div>
+
+<span class="c1"># 批量下载</span>
+<div class="viewcode-block" id="BulkDownload"><a class="viewcode-back" href="../index.html#lupro.BulkDownload">[文档]</a><span class="k">def</span> <span class="nf">BulkDownload</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `generator` : `list[lupro]` lupro实例列表</span>
+<span class="sd">    `BulkDownload` 为通过实例列表的批量下载</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">gevent</span><span class="o">.</span><span class="n">joinall</span><span class="p">([</span><span class="n">gevent</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">save_file</span><span class="p">,)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">])</span></div>
+
+<span class="c1"># xpath 批量解析</span>
+<div class="viewcode-block" id="xpath_Batchanalysis"><a class="viewcode-back" href="../index.html#lupro.xpath_Batchanalysis">[文档]</a><span class="k">def</span> <span class="nf">xpath_Batchanalysis</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span> <span class="o">=</span> <span class="n">original</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `generator` : `list[lupro]` lupro实例列表</span>
+<span class="sd">    `analytic` : `dict` 解析字典</span>
+<span class="sd">    `auxiliary` : `function` 自定义解析处理</span>
+<span class="sd">    `xpath_Batchanalysis` 为xpath解析器</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="n">gevent</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">xpath_analysis</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">]</span>
+    <span class="n">gevent</span><span class="o">.</span><span class="n">joinall</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">])</span></div>
+
+<span class="c1"># json 批量解析</span>
+<div class="viewcode-block" id="json_Batchanalysis"><a class="viewcode-back" href="../index.html#lupro.json_Batchanalysis">[文档]</a><span class="k">def</span> <span class="nf">json_Batchanalysis</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span> <span class="o">=</span> <span class="n">original</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `generator` : `list[lupro]` lupro实例列表</span>
+<span class="sd">    `analytic` : `dict` 解析字典</span>
+<span class="sd">    `auxiliary` : `function` 自定义解析处理</span>
+<span class="sd">    `json_Batchanalysis` 为json解析器 &lt;json解析器为 `dtanys`&gt;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="n">gevent</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">json_analysis</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">]</span>
+    <span class="n">gevent</span><span class="o">.</span><span class="n">joinall</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">])</span></div>
+
+<span class="c1"># 正则 批量解析</span>
+<div class="viewcode-block" id="re_Batchanalysis"><a class="viewcode-back" href="../index.html#lupro.re_Batchanalysis">[文档]</a><span class="k">def</span> <span class="nf">re_Batchanalysis</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span> <span class="o">=</span> <span class="n">original</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `generator` : `list[lupro]` lupro实例列表</span>
+<span class="sd">    `analytic` : `dict`{`str`:`function`} 正则解析字典 </span>
+<span class="sd">    `auxiliary` : `function` 自定义解析处理</span>
+<span class="sd">    `re_Batchanalysis` 为正则解析器</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="n">gevent</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">re_analysis</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">]</span>
+    <span class="n">gevent</span><span class="o">.</span><span class="n">joinall</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">])</span></div>
+
+<span class="c1"># 批量解析</span>
+<div class="viewcode-block" id="Batchanalysis"><a class="viewcode-back" href="../index.html#lupro.Batchanalysis">[文档]</a><span class="k">def</span> <span class="nf">Batchanalysis</span><span class="p">(</span><span class="n">mold</span> <span class="p">:</span> <span class="nb">str</span> <span class="p">,</span><span class="n">generator</span> <span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">analytic</span> <span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">auxiliary</span> <span class="o">=</span> <span class="n">original</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    `mold` : `str` 解析方法</span>
+<span class="sd">    `generator` : `list[lupro]` lupro实例列表</span>
+<span class="sd">    `analytic` : `dict` 解析字典</span>
+<span class="sd">    `auxiliary` : `function` 自定义解析处理</span>
+<span class="sd">    `Batchanalysis` 为解析链</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">mold</span> <span class="o">==</span> <span class="s1">&#39;xpath&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xpath_Batchanalysis</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mold</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json_Batchanalysis</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mold</span> <span class="o">==</span> <span class="s1">&#39;re&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">re_Batchanalysis</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">analytic</span><span class="p">,</span> <span class="n">auxiliary</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span><span class="s1">&#39;No corresponding parsing method!&#39;</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Lupro</a></h1>
+
+
+
+
+
+
+
+
+<h3>导航</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">模块代码</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="转向" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, ShengXin Lu.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
