@@ -1,4 +1,4 @@
 url: https://luxuncang.github.io/test/
-root: /test
+root: /test/docs
 permalink: :year/:month/:day/:title.html
 permalink_defaults:
